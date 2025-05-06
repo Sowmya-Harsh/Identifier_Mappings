@@ -1,9 +1,17 @@
 import streamlit as st
 import psycopg2
 import pandas as pd
+import socket
 
 st.set_page_config(page_title="Identifier Mapping Tool", layout="centered")
 st.title("🔗 Identifier Mapping Entry Tool")
+
+# IPv4 Fix: resolve host to IPv4 to avoid IPv6 errors
+def force_ipv4(host):
+    infos = socket.getaddrinfo(host, None, socket.AF_INET)
+    return infos[0][4][0]
+
+resolved_host = force_ipv4(st.secrets["DB_HOST"])
 
 # -----------------------------------
 # 1. Manual Entry Form
@@ -25,7 +33,7 @@ with st.form("entry_form"):
                 dbname=st.secrets["DB_NAME"],
                 user=st.secrets["DB_USER"],
                 password=st.secrets["DB_PASS"],
-                host=st.secrets["DB_HOST"],
+                host=resolved_host,
                 port=st.secrets["DB_PORT"]
             )
             cursor = conn.cursor()
@@ -78,7 +86,7 @@ if file is not None:
                 dbname=st.secrets["DB_NAME"],
                 user=st.secrets["DB_USER"],
                 password=st.secrets["DB_PASS"],
-                host=st.secrets["DB_HOST"],
+                host=resolved_host,
                 port=st.secrets["DB_PORT"]
             )
             cursor = conn.cursor()
@@ -109,7 +117,7 @@ if st.button("Download CSV"):
             dbname=st.secrets["DB_NAME"],
             user=st.secrets["DB_USER"],
             password=st.secrets["DB_PASS"],
-            host=st.secrets["DB_HOST"],
+            host=resolved_host,
             port=st.secrets["DB_PORT"]
         )
         df = pd.read_sql("SELECT * FROM identifier_mappings", conn)
